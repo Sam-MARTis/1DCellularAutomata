@@ -121,13 +121,14 @@ class Automata {
     this.oldStates.push(this.cellArray.slice())
   }
   drawSelf = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const startPosX = canvas.width*(1-POS)/2;
+    const startPosY = (1-VPOS)*0.5*canvas.height;
     for(let j = 0; j<this.oldStates.length; j++){
         ctx.save()
         // console.log(this.oldStates.length)
         ctx.translate(0, scaleSize*(MAXVAL-j))
-        const startPosX = canvas.width*(1-POS)/2;
-        const startPosY = (1-VPOS)*canvas.height;
-        ctx.beginPath()
+        // ctx.beginPath()
         for(let i = 0; i<this.w; i++){
 
             // this.ctx.strokeStyle= this.cellArray[i]==1 ? "white" : "black";
@@ -156,7 +157,7 @@ auto1.initializeCells();
 //     i++
 //     auto1.step()
 // }, 20)
-const ITERS_PER_RENDER = 5
+const ITERS_PER_RENDER = 3
 const main = () => {
     auto1.drawSelf()
     for(let i = 0; i<ITERS_PER_RENDER; i++){
