@@ -7,7 +7,7 @@ if(!ctx){
 }
 // const MAXVAL = 20;
 const radius = 1;
-const rule: number = 90; //for r = 1, rule 90 and 150 are non-trivial
+const rule: number = 18; //for r = 1, rule 90 and 150 are non-trivial
 const ruleArray = (
     "0".repeat(2 ** (2 * radius + 1) - rule.toString(2).length) + rule.toString(2)
 )
@@ -17,13 +17,13 @@ const ruleArray = (
 if (ruleArray.length != 2 ** (2 * radius + 1)) {
     throw Error("Rule array not properly formed");
 }
-// console.log(ruleArray);
+console.log(ruleArray);
 // console.log("34333" + "0".repeat(0))
-const cellCount = 100
+const cellCount = 200
 
 
 
-const VPOS = 0.8
+const VPOS = 0.95
 const POS = 0.8 // Percentage of screen :)
 let scaleSize = canvas.width*POS / (cellCount)
 let MAXVAL = canvas.height*VPOS/scaleSize
@@ -33,6 +33,7 @@ let MAXVAL = canvas.height*VPOS/scaleSize
 
 class Automata {
   cellArray: Int32Array;
+  cellArrayBuffer: Int32Array;
   w: number;
   bcl: Int32Array;
   bcr: Int32Array;
@@ -41,17 +42,22 @@ class Automata {
 
   constructor(width: number) {
     this.w = width;
-    this.cellArray = new Int32Array(width).fill(0);
-    this.bcl = new Int32Array(radius).fill(1);
-    this.bcr = new Int32Array(radius).fill(1);
+    this.cellArray = new Int32Array(width).fill(1);
+    this.cellArrayBuffer = this.cellArray.slice()
+    this.bcl = new Int32Array(radius).fill(0);
+    this.bcr = new Int32Array(radius).fill(0);
     this.oldStates = [];
     this.ctx = ctx;
   }
   initializeCells = (startingSequence: String | undefined = undefined) => {
     if (startingSequence == undefined) {
       for (let i = 0; i < this.w; i++) {
-        this.cellArray[i] = Number(Math.random() > 0.5);
+        // this.cellArray[i] = Number(Math.random() > 0.5);
+        this.cellArray[i] = 0;
+
       }
+      console.log("Initializing default")
+      this.cellArray[Math.round(this.w/2)+1] = 1
     } else {
       startingSequence =
         startingSequence + "0".repeat(this.w - startingSequence.length);
@@ -74,12 +80,12 @@ class Automata {
         } else {
           cellvalue += this.bcl[radius + (i + j)] * 2 ** (radius - j);
           if(Number.isNaN(cellvalue)){
-            // console.log("Getting nan cellvalue at i+j = ", i+j)
+            console.log("Getting nan cellvalue at i+j = ", i+j)
 
           }
         }
       }
-      this.cellArray[i] = Number(ruleArray[cellvalue]);
+      this.cellArrayBuffer[i] = Number(ruleArray[cellvalue]);
     //   console.log("getting value: ", ruleArray[cellvalue], "cellvalue: ", cellvalue)
     }
 
@@ -88,7 +94,7 @@ class Automata {
       for (let j = -radius; j <= radius; j++) {
         cellvalue += this.cellArray[i + j] * 2 ** (radius - j);
       }
-      this.cellArray[i] = Number(ruleArray[cellvalue]);
+      this.cellArrayBuffer[i] = Number(ruleArray[cellvalue]);
     }
 
     for (let i = this.w - radius; i < this.w; i++) {
@@ -101,13 +107,19 @@ class Automata {
           cellvalue += this.bcr[(i + j)- width] * 2 ** (radius - j);
         }
       }
-      this.cellArray[i] = Number(ruleArray[cellvalue]);
-      this.oldStates.push(this.cellArray.slice())
-    if (this.oldStates.length > MAXVAL) {
-        this.oldStates.shift(); // Removes the oldest (first) element
-      }
+      this.cellArrayBuffer[i] = Number(ruleArray[cellvalue]);
     }
+    if (this.oldStates.length > MAXVAL) {
+      this.oldStates.shift(); // Removes the oldest (first) element
+    }
+    
   };
+  syncBuffer = ()=>{
+    for(let i = 0; i<this.w; i++){
+      this.cellArray[i] = this.cellArrayBuffer[i]
+    }
+    this.oldStates.push(this.cellArray.slice())
+  }
   drawSelf = () => {
     for(let j = 0; j<this.oldStates.length; j++){
         ctx.save()
@@ -144,11 +156,13 @@ auto1.initializeCells();
 //     i++
 //     auto1.step()
 // }, 20)
-
+const ITERS_PER_RENDER = 5
 const main = () => {
     auto1.drawSelf()
+    for(let i = 0; i<ITERS_PER_RENDER; i++){
     auto1.step()
-
+    auto1.syncBuffer()
+    }
     requestAnimationFrame(main)
 }
 
